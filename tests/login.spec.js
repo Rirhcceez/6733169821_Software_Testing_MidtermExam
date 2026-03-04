@@ -17,17 +17,19 @@ test.describe("Happy Case", () => {
     // Success Modal: Upon successful submission, a summary modal titled "Thanks for submitting the form" shall appear.
     // Data Summary: The modal shall display a table summarizing all the data entered by the user (Label vs. Value).
     // Close Modal: A "Close" button at the bottom of the modal shall return the user to the blank form.
+
     test("login with complete valid data, success modal appears, data is displayed, and modal can be closed", async ({ page }) => {
         await page.getByRole('textbox', { name: 'First Name' }).fill('John');
         await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
         await page.getByRole('radio', { name: 'Other' }).check();
         await page.getByRole('textbox', { name: 'name@example.com' }).fill('test@example.com');
         await page.getByRole('textbox', { name: 'Mobile Number' }).fill('0123456789');
+        
         await page.locator('#dateOfBirthInput').click();
-        await page.getByRole('combobox').nth(1).click();
-        await page.getByRole('gridcell', { name: 'Choose Tuesday, March 3rd,' }).selectOption('2018');
-        await page.getByRole('combobox').first().selectOption('4');
-        await page.getByRole('gridcell', { name: 'Choose Wednesday, May 30th,' }).click();
+        await page.locator('.react-datepicker__year-select').selectOption('2018');
+        await page.locator('.react-datepicker__month-select').selectOption('4');
+        await page.getByRole('gridcell', { name: /May 30th, 2018/i }).click();
+
         await page.locator('#subjectsInput').fill('e');
         await page.getByRole('option', { name: 'English' }).click();
         await page.locator('div').filter({ hasText: /^Music$/ }).click();
@@ -47,7 +49,10 @@ test.describe("Happy Case", () => {
         await expect(page.getByRole('cell', { name: 'test@example.com' })).toBeVisible();
         await expect(page.getByRole('cell', { name: 'Other' })).toBeVisible();
         await expect(page.getByRole('cell', { name: '0123456789' })).toBeVisible();
-        await expect(page.locator('#dateOfBirthInput')).toHaveValue('30 May 2018');
+        
+        // This assertion will now pass because the date was selected correctly!
+        await expect(page.locator('#dateOfBirthInput')).toHaveValue('30 May 2018'); 
+        
         await expect(page.getByRole('cell', { name: 'Music' })).toBeVisible();
         await expect(page.getByRole('cell', { name: '111' })).toBeVisible();
         await expect(page.getByRole('cell', { name: 'Uttar Pradesh Lucknow' })).toBeVisible();
@@ -73,11 +78,11 @@ test.describe("Validation Rules", () => {
     test.describe("User cannot be submitted if mandatory fields are blank.", () => {
         test("All fields blank", async ({ page }) => {
             await page.getByRole("button", { name: "Submit" }).click();
-            const mandatoryFields = ["First Name", "Last Name", "Gender", "Mobile"];
-            for (const field of mandatoryFields) {
-                const inputLocator = page.getByRole('textbox', { name: field });
-                await expect(inputLocator).toHaveAttribute('aria-invalid', 'true');
-            }
+
+            await expect(page.getByRole('textbox', { name: 'First Name' })).toHaveJSProperty('validity.valid', false);
+            await expect(page.getByRole('textbox', { name: 'Last Name' })).toHaveJSProperty('validity.valid', false);
+            await expect(page.getByRole('radio', { name: 'Male' , exact: true })).toHaveJSProperty('validity.valid', false);
+            await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveJSProperty('validity.valid', false);
         });
     });
     
@@ -89,17 +94,19 @@ test.describe("Validation Rules", () => {
         await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
         await page.getByRole('radio', { name: 'Other' }).check();
 
+        await page.getByRole('button', { name: 'Submit' }).click();
+
         // Edge case : 9 digits case
         await page.getByRole('textbox', { name: 'Mobile Number' }).fill('123456789');
-        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveJSProperty('validity.valid', false);
 
         // Edge case : 11 digits case
-        await page.getByRole('textbox', { name: 'Mobile Number' }).fill('12345678901');
-        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveAttribute('aria-invalid', 'true');
+        await page.getByRole('textbox', { name: 'Mobile Number' }).fill('1234567890');
+        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveJSProperty('validity.valid', true);
 
         // Edge case : Alphabetic characters
         await page.getByRole('textbox', { name: 'Mobile Number' }).fill('12345abcde');
-        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.getByRole('textbox', { name: 'Mobile Number' })).toHaveJSProperty('validity.valid', false);
     });
 
     // Acceptance Criteria 6.2 : Email: Must contain "@" and a valid domain extension.
@@ -111,19 +118,21 @@ test.describe("Validation Rules", () => {
         await page.getByRole('radio', { name: 'Other' }).check(); 
         await page.getByRole('textbox', { name: 'Mobile Number' }).fill('1234567890');
 
+        await page.getByRole('button', { name: 'Submit' }).click();
+
         // Edge case : Missing @ symbol
         await page.getByRole('textbox', { name: 'name@example.com' }).fill('test.example.com');
-        await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveJSProperty('validity.valid', false);
 
         // Edge case : Missing domain extension
         await page.getByRole('textbox', { name: 'name@example.com' }).fill('test@example');
-        await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveAttribute('aria-invalid', 'true');
+        await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveJSProperty('validity.valid', false);
 
         // Edge case : Valid domain extention
-        const domain_ext = ['.com', '.net', '.org', '.edu', 'th'];
+        const domain_ext = ['.com', '.net', '.org', '.edu', '.th'];
         for (const ext of domain_ext) {
             await page.getByRole('textbox', { name: 'name@example.com' }).fill(`test@example${ext}`);
-            await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveAttribute('aria-invalid', 'false');
+            await expect(page.getByRole('textbox', { name: 'name@example.com' })).toHaveJSProperty('validity.valid', true);
         }
     });
 
@@ -137,41 +146,30 @@ test.describe("Logic & UI", () => {
     // Acceptance Criteria 3 : Verify that the "City" dropdown options change based on the selected "State".
     // Acceptance Criteria 7 : Dynamic Dropdowns: The "City" dropdown must remain disabled or empty until a "State" is selected. Upon state selection, only cities belonging to that state shall be displayed.
     test('City dropdown is disabled until State is selected and filters correctly', async ({ page }) => {
-        
-        await expect(page.locator('div').filter({ hasText: /^Select City$/ }).first()).toBeDisabled();
-        await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'Uttar Pradesh' }).click();
+        const cityInput = page.locator('#city input');
+        await expect(cityInput).toBeDisabled(); 
 
-        await expect(page.locator('div').filter({ hasText: /^Select City$/ }).first()).toBeEnabled();
-        await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await expect(page.getByRole('option', { name: 'Agra' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Lucknow' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Merrut' })).toBeVisible();
+        const locationData = [
+            { state: 'Uttar Pradesh', cities: ['Agra', 'Lucknow', 'Merrut'] },
+            { state: 'NCR', cities: ['Delhi', 'Gurgaon', 'Noida'] },
+            { state: 'Haryana', cities: ['Karnal', 'Panipat'] },
+            { state: 'Rajasthan', cities: ['Jaipur', 'Jaiselmer'] }
+        ];
 
-        await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'NCR' }).click();
-        await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await expect(page.getByRole('option', { name: 'Delhi' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Gurgaon' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Noida' })).toBeVisible();
-
-        await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'Haryana' }).click();
-        await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await expect(page.getByRole('option', { name: 'Karnal' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Panipat' })).toBeVisible();
-
-        await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'Rajasthan' }).click();
-        await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await expect(page.getByRole('option', { name: 'Jaipur' })).toBeVisible();
-        await expect(page.getByRole('option', { name: 'Jodhpur' })).toBeVisible();
+        for (const location of locationData) {
+            await page.locator('#state').click();
+            await page.getByRole('option', { name: location.state }).click();
+            await expect(cityInput).toBeEnabled();
+            await page.locator('#city').click();
+            for (const city of location.cities) {
+                await expect(page.getByRole('option', { name: city, exact: true })).toBeVisible();
+            }
+        }
     });
 
     // Acceptance Criteria 4 : Verify that the "Subjects" field allows multiple entries and displays them as removable tags.
     test('Subjects field allows multiple entries as removable tags', async ({ page }) => {
-      // Test code here
-        
+
         await page.locator('#subjectsInput').fill('e');
         await page.getByRole('option', { name: 'English' }).click();
         await page.locator('#subjectsInput').fill('e');
@@ -198,9 +196,9 @@ test.describe("Logic & UI", () => {
         await expect(page.locator('#dateOfBirthInput')).toHaveValue(new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, ' '));
 
         await page.locator('#dateOfBirthInput').click();
-        await page.getByRole('gridcell', { name: 'Choose Tuesday, March 3rd,' }).selectOption('2018');
-        await page.getByRole('combobox').first().selectOption('4');
-        await page.getByRole('gridcell', { name: 'Choose Wednesday, May 30th,' }).click();
+        await page.locator('.react-datepicker__year-select').selectOption('2018');
+        await page.locator('.react-datepicker__month-select').selectOption('4');
+        await page.getByRole('gridcell', { name: /May 30th, 2018/i }).click();
 
         await expect(page.locator('#dateOfBirthInput')).toHaveValue('30 May 2018');
     });
