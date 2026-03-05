@@ -46,3 +46,20 @@ export async function fillValidatedInput(page, labels) {
         }
     }
 }
+
+export async function multipleSubjects(page) {
+    await page.locator('#subjectsInput').fill('e');
+    await page.getByRole('option', { name: 'English' }).click();
+    await page.locator('#subjectsInput').fill('e');
+    await page.getByRole('option', { name: 'Chemistry' }).click();
+    await page.locator('#subjectsInput').fill('e');
+    await page.getByRole('option', { name: 'Computer Science' }).click();
+}
+
+export async function checkInvalidation(page, fieldName) {
+    await expect(page.getByRole('textbox', { name: fieldName })).toHaveJSProperty('validity.valid', false);
+}
+
+export async function checkValidation(page, fieldName) {
+    await expect(page.getByRole('textbox', { name: fieldName })).toHaveJSProperty('validity.valid', true);
+}
