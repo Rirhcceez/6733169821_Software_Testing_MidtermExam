@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { fillValidatedInput } from "../utils/formHelper/formHelper";
 
 // ======= SETUP =======
 
@@ -19,25 +20,26 @@ test.describe("Happy Case", () => {
     // Close Modal: A "Close" button at the bottom of the modal shall return the user to the blank form.
 
     test("login with complete valid data, success modal appears, data is displayed, and modal can be closed", async ({ page }) => {
-        await page.getByRole('textbox', { name: 'First Name' }).fill('John');
-        await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
-        await page.getByRole('radio', { name: 'Other' }).check();
-        await page.getByRole('textbox', { name: 'name@example.com' }).fill('test@example.com');
-        await page.getByRole('textbox', { name: 'Mobile Number' }).fill('0123456789');
+        // await page.getByRole('textbox', { name: 'First Name' }).fill('John');
+        // await page.getByRole('textbox', { name: 'Last Name' }).fill('Doe');
+        // await page.getByRole('radio', { name: 'Other' }).check();
+        // await page.getByRole('textbox', { name: 'name@example.com' }).fill('test@example.com');
+        // await page.getByRole('textbox', { name: 'Mobile Number' }).fill('0123456789');
         
-        await page.locator('#dateOfBirthInput').click();
-        await page.locator('.react-datepicker__year-select').selectOption('2018');
-        await page.locator('.react-datepicker__month-select').selectOption('4');
-        await page.getByRole('gridcell', { name: /May 30th, 2018/i }).click();
+        // await page.locator('#dateOfBirthInput').click();
+        // await page.locator('.react-datepicker__year-select').selectOption('2018');
+        // await page.locator('.react-datepicker__month-select').selectOption('4');
+        // await page.getByRole('gridcell', { name: /May 30th, 2018/i }).click();
 
-        await page.locator('#subjectsInput').fill('e');
-        await page.getByRole('option', { name: 'English' }).click();
-        await page.locator('div').filter({ hasText: /^Music$/ }).click();
-        await page.getByRole('textbox', { name: 'Current Address' }).fill('111');
-        await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'Uttar Pradesh' }).click();
-        await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
-        await page.getByRole('option', { name: 'Lucknow' }).click();
+        // await page.locator('#subjectsInput').fill('e');
+        // await page.getByRole('option', { name: 'English' }).click();
+        // await page.locator('div').filter({ hasText: /^Music$/ }).click();
+        // await page.getByRole('textbox', { name: 'Current Address' }).fill('111');
+        // await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
+        // await page.getByRole('option', { name: 'Uttar Pradesh' }).click();
+        // await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
+        // await page.getByRole('option', { name: 'Lucknow' }).click();
+        await fillValidatedInput(page, ['First Name', 'Last Name', 'Gender', 'Email', 'Mobile', 'Date', 'Subjects', 'Hobbies', 'Address', 'State', 'City']);
 
         //ACC 1 & Success Modal
         await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
