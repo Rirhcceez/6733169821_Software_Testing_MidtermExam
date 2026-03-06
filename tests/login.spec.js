@@ -22,7 +22,7 @@ test.describe("Happy Case", () => {
     test("login with complete valid data, success modal appears, data is displayed, and modal can be closed", async ({ page }) => {
 
         //fill form with valid data
-        await fillValidatedInput(page, ['First Name', 'Last Name', 'Gender', 'Email', 'Mobile', 'Date', 'Subjects', 'Hobbies', 'Address', 'State', 'City']);
+        await fillValidatedInput(page, ['First Name', 'Last Name', 'Gender', 'Email', 'Mobile', 'Date', 'Subjects', 'Hobbies', 'Picture', 'Address', 'State', 'City']);
 
         //ACC 1 & Success Modal
         await expect(page.getByRole('button', { name: 'Submit' })).toBeVisible();
@@ -38,6 +38,7 @@ test.describe("Happy Case", () => {
         // This assertion will now pass because the date was selected correctly!
         await expect(page.locator('#dateOfBirthInput')).toHaveValue('30 May 2018'); 
         await expect(page.getByRole('cell', { name: 'Music' })).toBeVisible();
+        await expect(page.getByRole('cell', { name: 'test-image.jpg' })).toBeVisible();
         await expect(page.getByRole('cell', { name: '111' })).toBeVisible();
         await expect(page.getByRole('cell', { name: 'Uttar Pradesh Lucknow' })).toBeVisible();
     });
@@ -72,6 +73,67 @@ test.describe("Validation Rules", () => {
             await checkInvalidation(page, 'Mobile Number');
             await expect(page.getByRole('radio', { name: 'Male' , exact: true })).toHaveJSProperty('validity.valid', false);
         });
+
+        test("Only First Name blank", async ({ page }) => {
+
+            // Fill all mandatory fields except First Name
+            await fillValidatedInput(page, ['Last Name', 'Gender', 'Mobile']);
+
+            // Click submit
+            await page.getByRole("button", { name: "Submit" }).click();
+
+            // Check that validation errors are shown for all mandatory fields
+            await checkInvalidation(page, 'First Name');
+            await checkValidation(page, 'Last Name');
+            await checkValidation(page, 'Mobile Number');
+            await expect(page.getByRole('radio', { name: 'Other' , exact: true })).toHaveJSProperty('validity.valid', true);
+        });
+
+        test("Only Last Name blank", async ({ page }) => {
+
+            // Fill all mandatory fields except First Name
+            await fillValidatedInput(page, ['First Name', 'Gender', 'Mobile']);
+
+            // Click submit
+            await page.getByRole("button", { name: "Submit" }).click();
+
+            // Check that validation errors are shown for all mandatory fields
+            await checkValidation(page, 'First Name');
+            await checkInvalidation(page, 'Last Name');
+            await checkValidation(page, 'Mobile Number');
+            await expect(page.getByRole('radio', { name: 'Other' , exact: true })).toHaveJSProperty('validity.valid', true);
+        });
+
+        test("Only Gender blank", async ({ page }) => {
+
+            // Fill all mandatory fields except First Name
+            await fillValidatedInput(page, ['First Name', 'Last Name', 'Mobile']);
+
+            // Click submit
+            await page.getByRole("button", { name: "Submit" }).click();
+
+            // Check that validation errors are shown for all mandatory fields
+            await checkValidation(page, 'First Name');
+            await checkValidation(page, 'Last Name');
+            await checkValidation(page, 'Mobile Number');
+            await expect(page.getByRole('radio', { name: 'Other' , exact: true })).toHaveJSProperty('validity.valid', false);
+        });
+
+        test("Only Mobile Number blank", async ({ page }) => {
+
+            // Fill all mandatory fields except First Name
+            await fillValidatedInput(page, ['First Name', 'Last Name', 'Gender']);
+
+            // Click submit
+            await page.getByRole("button", { name: "Submit" }).click();
+
+            // Check that validation errors are shown for all mandatory fields
+            await checkValidation(page, 'First Name');
+            await checkValidation(page, 'Last Name');
+            await checkInvalidation(page, 'Mobile Number');
+            await expect(page.getByRole('radio', { name: 'Other' , exact: true })).toHaveJSProperty('validity.valid', true);
+        });
+        
     });
     
     // Acceptance Crteria 6.1 : Mobile: Must be exactly 10 digits. Alphabetic characters or special symbols are not permitted.
@@ -92,6 +154,10 @@ test.describe("Validation Rules", () => {
         
         // Edge case : Alphabetic characters
         await page.getByRole('textbox', { name: 'Mobile Number' }).fill('12345abcde');
+        await checkInvalidation(page, 'Mobile Number');
+
+        // Edge case : Special symbols
+        await page.getByRole('textbox', { name: 'Mobile Number' }).fill('12345!@#$0');
         await checkInvalidation(page, 'Mobile Number');
     });
 

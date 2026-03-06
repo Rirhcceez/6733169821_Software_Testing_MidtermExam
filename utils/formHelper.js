@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test";
+import path from 'path';
 
 export async function fillValidatedInput(page, labels) {
     for (const label of labels) {
@@ -31,16 +32,19 @@ export async function fillValidatedInput(page, labels) {
             case 'Hobbies':
                 await page.locator('div').filter({ hasText: /^Music$/ }).click();
                 break;
+            case 'Picture':
+                const imagePath = path.join(__dirname, '../test-data/test-image.jpg'); 
+                await page.locator('#uploadPicture').setInputFiles(imagePath);
+                break;
             case 'Address':
                 await page.getByRole('textbox', { name: 'Current Address' }).fill('111');
                 break;
             case 'State':
-                await page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
+                await page.locator('#state').click();
                 await page.getByRole('option', { name: 'Uttar Pradesh' }).click();
-                // await expect(page.locator('#state > .css-13cymwt-control > .css-hlgwow > .css-19bb58m')).toHaveText('Uttar Pradesh');
                 break;
             case 'City':
-                await page.locator('#city > .css-13cymwt-control > .css-hlgwow > .css-19bb58m').click();
+                await page.locator('#city').click();
                 await page.getByRole('option', { name: 'Lucknow' }).click();
                 break;
         }
